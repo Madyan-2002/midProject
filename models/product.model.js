@@ -21,9 +21,13 @@ const productSchema = new mongoose.Schema({
         default: 0
     },
     category: {
-        type: String,
-        enum: ['clothing', 'books', 'electronics', ' toys', 'home', 'beauty', 'other'],
-        default: 'other'
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+        required: true
+    },
+    isFavorite: {
+        type: Boolean,
+        default: false
     },
     seller: {
         type: mongoose.Schema.Types.ObjectId,

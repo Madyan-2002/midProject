@@ -6,6 +6,8 @@ const connectDb = require('./config/db');
 // Routes
 const userRoute = require('./routes/user_route');
 const productRoute = require('./routes/product_route');
+const categoryRoute = require('./routes/category_route');
+const cartRoute = require('./routes/cart_route');
 
 
 
@@ -18,6 +20,9 @@ connectDb();
 app.use(express.json());
 app.use(`${api}/users`, userRoute);
 app.use(`${api}/products`, productRoute);
+app.use(`${api}/categories`, categoryRoute);
+app.use(`${api}/carts`, cartRoute);
+
 
 app.listen(port, () => {
   console.log(`midProject app running on port ${port}`);
