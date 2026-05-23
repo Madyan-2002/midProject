@@ -68,7 +68,7 @@ const createProduct = async (req, res) => {
             stock: req.body.stock,
             category: req.body.category,
             isFavorite: req.body.isFavorite,
-            seller: req.body.seller
+            createdBy: req.body.createdBy
         })
 
         const savedProduct = await newProduct.save();
@@ -94,7 +94,7 @@ const updateProductById = async (req, res) => {
                 stock: req.body.stock,
                 category: req.body.category,
                 isFavorite: req.body.isFavorite,
-                seller: req.body.seller
+                createdBy: req.body.createdBy
             },
             { new: true }
         );

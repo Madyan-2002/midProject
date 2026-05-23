@@ -41,7 +41,7 @@ const createUser = async (req, res) => {
             role: req.body.role
         })
         const savedUser = await newUser.save();
-        return res.status(201).json(savedUser.select("-password"));
+        return res.status(201).json(savedUser);
     } catch (error) {
         return res.status(500).json({
             message: "Failed to create user",
@@ -101,8 +101,11 @@ const loginUser = async (req, res) => {
         const secretKey = process.env.JWT_SECRET;
         const token = jwt.sign({
             email: user.email,
+            userId: user._id,
+            role: user.role
         },
-         secretKey
+         secretKey,
+         { expiresIn: '1w' }
         );
         if (!isPasswordValid) {
             return res.status(401).json({ message: "Invalid Password" });
@@ -146,6 +149,8 @@ const registerUser = async (req, res) => {
         })
     }
 }
+
+//
 
 module.exports = {
     getAllUsers,
