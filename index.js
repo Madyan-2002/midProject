@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
+const path = require('path');
 const connectDb = require('./config/db');
 const bodyParser = require('body-parser');
 const authJwt = require('./helper/jwt');
@@ -23,8 +24,7 @@ connectDb();
 // Middleware
 app.use(express.json());
 app.use(bodyParser.json());
-app.use(`${api}/users`, userRoute);
-app.use(`${api}/products`, productRoute);
+app.use(`${api}/uploads`, express.static(path.join(__dirname, "uploads")));
 app.use(`${api}/categories`, categoryRoute);
 app.use(`${api}/order`, orderRoute);
 
@@ -33,9 +33,15 @@ app.use(authJwt.unless({
   path: [
     `${api}/users/login`,
     `${api}/users/register`,
-    `${api}/products`,
+    `${api}/products`
   ]
 }));
+
+// بعدها مباشرة routes
+app.use(`${api}/users`, userRoute);
+app.use(`${api}/products`, productRoute);
+
+
 // app.use(authJwt);
 app.use(errorHandler);
 

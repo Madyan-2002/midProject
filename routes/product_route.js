@@ -6,10 +6,10 @@ const authJwt = require('../helper/jwt');
 const isAdmin = require('../helper/is_admin');
 
 // Get All Products
-router.get('/', authJwt, productController.getAllProducts);
+router.get('/',  productController.getAllProducts);
 
 // Get Product By ID 
-router.get('/:id', authJwt, productController.getProductById);
+router.get('/:id', productController.getProductById);
 
 //get with determined attributes
 router.get('/base/info', authJwt, productController.getProductWithBaseInfo);

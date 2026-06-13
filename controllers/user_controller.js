@@ -110,7 +110,14 @@ const loginUser = async (req, res) => {
         if (!isPasswordValid) {
             return res.status(401).json({ message: "Invalid Password" });
         }
-        return res.status(200).json({user : user, token: token });
+        return res.status(200).json({
+            id : user._id,
+            email : user.email,
+            name : user.name,
+            role: user.role,
+            token: token,
+
+        });
 
     } catch (error) {
         return res.status(500).json({
