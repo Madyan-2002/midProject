@@ -64,13 +64,12 @@ const createProduct = async (req, res) => {
             title: req.body.title,
             description: req.body.description,
             price: req.body.price,
-            image: req.body.image,
+            image: req.file ? [req.file.filename] : [],  
             stock: req.body.stock,
             category: req.body.category,
-            isFavorite: req.body.isFavorite,
-            createdBy: req.body.createdBy
+            isFavorite: req.body.isFavorite ?? false,
+             createdBy: req.user.userId,
         })
-
         const savedProduct = await newProduct.save();
         return res.status(201).json(savedProduct);
     } catch (error) {
@@ -142,6 +141,12 @@ const deleteProductById = async (req, res) => {
     }
 }
 
+// uploads image 
+const uploadImage = (req, res) => {
+    res.json({ image: req.file.fieldname })
+}
+
+
 module.exports = {
     getAllProducts,
     getProductById,
@@ -150,5 +155,6 @@ module.exports = {
     createProduct,
     updateProductById,
     getFavoriteProducts,
-    deleteProductById
+    deleteProductById,
+    uploadImage
 };

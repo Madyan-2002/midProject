@@ -4,29 +4,24 @@ const productController = require('../controllers/product_controller');
 const productModel = require('../models/product.model');
 const authJwt = require('../helper/jwt');
 const isAdmin = require('../helper/is_admin');
+const uploads = require('../helper/uploads');
 
-// Get All Products
-router.get('/',  productController.getAllProducts);
+// Get All Product
+router.get('/', productController.getAllProducts);
 
-// Get Product By ID 
-router.get('/:id', productController.getProductById);
-
-//get with determined attributes
+// الـ specific routes أولاً قبل /:id
 router.get('/base/info', authJwt, productController.getProductWithBaseInfo);
-
-//get count of products
 router.get('/base/count', authJwt, productController.getProductCount);
-
-//Create New Product
-router.post('/', authJwt, isAdmin, productController.createProduct);
-
-//Update Product By ID
-router.put('/:id', authJwt, isAdmin, productController.updateProductById);
-
-//Filter Products favorite
 router.get('/base/favorites/:count', authJwt, productController.getFavoriteProducts);
 
-//Delete Product By ID
+// الـ dynamic route في الأخير
+router.get('/:id', productController.getProductById);
+
+router.post('/', authJwt, isAdmin, uploads.single("image"), productController.createProduct);
+router.post('/uploads', authJwt, isAdmin, uploads.single("image"), productController.uploadImage);
+
+router.put('/:id', authJwt, isAdmin, productController.updateProductById);
 router.delete('/:id', authJwt, isAdmin, productController.deleteProductById);
+
 
 module.exports = router;
