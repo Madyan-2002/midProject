@@ -40,7 +40,6 @@ const createCategory =  async (req, res) => {
 };
 
 // Update Category By ID
-
 const updateCategoryById =  async (req, res) => {
     try {
         const updatedCategory = await categoryModel.findByIdAndUpdate(

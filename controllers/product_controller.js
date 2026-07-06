@@ -1,32 +1,49 @@
 const mongoose = require('mongoose');
 const productModel = require('../models/product.model');
-const categoryModel = require('../models/category.model');
 
-// Get All Products
 const getAllProducts = async (req, res) => {
+    try {
+        let filter = {};
 
-    let filter = {};
-    if (req.query.category) {
-        filter = { category: { $in: req.query.category.split(',') } };
-    }
+        if (req.query.category) {
+            filter.category = { $in: req.query.category.split(',') };
+        }
 
-    const productList = await productModel.find(filter).populate('category', 'name');
+        if (req.query.type) {
+            filter.type = req.query.type;
+        }
 
-    if (!productList) {
-        return res.status(404).json({ message: "No Product Found" });
-    } else {
+        if (req.query.mine === 'true') {
+            if (!req.user) {
+                return res.status(401).json({ message: "Unauthorized" });
+            }
+            filter.createdBy = req.user.userId;
+        }
+
+        const productList = await productModel
+            .find(filter)
+            .populate('category', 'name')
+            .populate('createdBy', 'name email role');
+
         return res.status(200).json(productList);
+    } catch (error) {
+        return res.status(500).json({
+            message: "Failed to fetch products",
+            details: error.message
+        });
     }
 };
 
-// Get Product By ID
 const getProductById = async (req, res) => {
-    const productId = mongoose.isValidObjectId(req.params.id);
-    if(!productId) {
+    const isValid = mongoose.isValidObjectId(req.params.id);
+    if (!isValid) {
         return res.status(400).json({ message: "Invalid Product ID" });
     }
     try {
-        const product = await productModel.findById(req.params.id).populate('category', 'name');
+        const product = await productModel
+            .findById(req.params.id)
+            .populate('category', 'name')
+            .populate('createdBy', 'name email role');
         if (!product) {
             return res.status(404).json({ message: "Product Not Found" });
         }
@@ -36,10 +53,7 @@ const getProductById = async (req, res) => {
     }
 };
 
-
-//get with determined attributes
 const getProductWithBaseInfo = async (req, res) => {
-
     const productWithBaseInfo = await productModel.find().select('title -_id');
     if (!productWithBaseInfo) {
         return res.status(404).json({ message: "No Product Found" });
@@ -47,7 +61,6 @@ const getProductWithBaseInfo = async (req, res) => {
     return res.status(200).json(productWithBaseInfo);
 };
 
-//get count of products
 const getProductCount = async (req, res) => {
     const productCount = await productModel.countDocuments();
     if (!productCount) {
@@ -56,20 +69,28 @@ const getProductCount = async (req, res) => {
     return res.status(200).json({ count: productCount });
 };
 
-
-// Create New Product
 const createProduct = async (req, res) => {
     try {
+        const allowedTypes = ['sell', 'donation', 'job', 'other'];
+        if (!allowedTypes.includes(req.body.type)) {
+            return res.status(400).json({ message: "Invalid product type" });
+        }
+
         const newProduct = productModel({
             title: req.body.title,
             description: req.body.description,
-            price: req.body.price,
-            image: req.file ? [req.file.filename] : [],  
-            stock: req.body.stock,
-            category: req.body.category,
-            isFavorite: req.body.isFavorite ?? false,
-             createdBy: req.user.userId,
-        })
+            type: req.body.type,
+            price: req.body.price || undefined,
+            stock: req.body.stock || undefined,
+            category: req.body.category || undefined,
+            targetAmount: req.body.targetAmount || undefined,
+            deadline: req.body.deadline || undefined,
+            salary: req.body.salary || undefined,
+            location: req.body.location || undefined,
+            image: req.file ? [req.file.filename] : [],
+            createdBy: req.user.userId,
+        });
+
         const savedProduct = await newProduct.save();
         return res.status(201).json(savedProduct);
     } catch (error) {
@@ -80,28 +101,36 @@ const createProduct = async (req, res) => {
     }
 };
 
-// Update Product By ID
 const updateProductById = async (req, res) => {
     try {
+        const product = await productModel.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: "Product Not Found" });
+        }
+
+        const isOwner = product.createdBy.toString() === req.user.userId;
+        const isAdmin = req.user.role === 'admin';
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ message: "ليس لديك صلاحية تعديل هذا الإعلان" });
+        }
+
         const updatedProduct = await productModel.findByIdAndUpdate(
             req.params.id,
             {
                 title: req.body.title,
                 description: req.body.description,
                 price: req.body.price,
-                image: req.body.image,
                 stock: req.body.stock,
                 category: req.body.category,
-                isFavorite: req.body.isFavorite,
-                createdBy: req.body.createdBy
+                targetAmount: req.body.targetAmount,
+                deadline: req.body.deadline,
+                salary: req.body.salary,
+                location: req.body.location,
             },
             { new: true }
         );
-        if (!updatedProduct) {
-            return res.status(404).json({ message: "Product Not Found" });
-        }
-        return res.status(200).json(updatedProduct);
 
+        return res.status(200).json(updatedProduct);
     } catch (error) {
         return res.status(500).json({
             message: "Failed to update product",
@@ -110,28 +139,20 @@ const updateProductById = async (req, res) => {
     }
 };
 
-//Filter Products favorite
-const getFavoriteProducts = async (req, res) => {
-    const count = parseInt(req.params.count) ? req.params.count : 0;
-    try {
-        const favoriteProducts = await productModel.find({ isFavorite: true }).limit(count);
-        return res.status(200).json(favoriteProducts);
-    } catch (error) {
-        return res.status(500).json({
-            message: "Failed to fetch favorite products",
-            details: error.message
-        });
-    }
-};
-
-// Delete Product By ID
 const deleteProductById = async (req, res) => {
     try {
-        const deletedProduct = await productModel.findByIdAndDelete(req.params.id);
-
-        if (!deletedProduct) {
+        const product = await productModel.findById(req.params.id);
+        if (!product) {
             return res.status(404).json({ message: "Product Not Found" });
         }
+
+        const isOwner = product.createdBy.toString() === req.user.userId;
+        const isAdmin = req.user.role === 'admin';
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ message: "ليس لديك صلاحية حذف هذا الإعلان" });
+        }
+
+        await productModel.findByIdAndDelete(req.params.id);
         return res.status(200).json({ message: "Product Deleted Successfully" });
     } catch (error) {
         return res.status(500).json({
@@ -139,13 +160,11 @@ const deleteProductById = async (req, res) => {
             details: error.message
         });
     }
-}
+};
 
-// uploads image 
 const uploadImage = (req, res) => {
-    res.json({ image: req.file.fieldname })
-}
-
+    res.json({ image: req.file.fieldname });
+};
 
 module.exports = {
     getAllProducts,
@@ -154,7 +173,6 @@ module.exports = {
     getProductCount,
     createProduct,
     updateProductById,
-    getFavoriteProducts,
     deleteProductById,
     uploadImage
 };
