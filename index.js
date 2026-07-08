@@ -34,7 +34,6 @@ app.use(authJwt.unless({
   path: [
     `${api}/users/login`,
     `${api}/users/register`,
-    `${api}/products`
   ]
 }));
 
