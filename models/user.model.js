@@ -15,20 +15,21 @@ const userSchema = new mongoose.Schema({
         required: true,
         minlength: 8
     },
-
-    role:{
+    image: {
+        type: String,
+        default: ''
+    },
+    role: {
         type: String,
         enum: ["admin", "seller", "customer"],
         default: 'customer'
     },
-    
-    favorites : [{
+    favorites: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref : 'Product'
-    }]
-  
+        ref: 'Product'
+    }],
 });
 
-const userModel =  mongoose.model('User', userSchema);
+const userModel = mongoose.model('User', userSchema);
 
 module.exports = userModel;

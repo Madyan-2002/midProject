@@ -3,35 +3,26 @@ const userModel = require('../models/user.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// Get All Users
 const getAllUsers = async (req, res) => {
     const userList = await userModel.find().select("-password");
-
     if (!userList) {
         return res.status(404).json({ message: "No User Found" });
     }
-    else {
-        return res.status(200).json(userList);
-    }
+    return res.status(200).json(userList);
 };
 
-// Get User By ID
 const getUserById = async (req, res) => {
     try {
-        const userId = await userModel.findById(req.params.id).select("-password");
-
-        if (!userId) {
+        const user = await userModel.findById(req.params.id).select("-password");
+        if (!user) {
             return res.status(404).json({ message: "User Not Found" });
         }
-        return res.status(200).json(userId);
-
+        return res.status(200).json(user);
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
 };
 
-
-// Create New User (يُستخدم عادة من الأدمن - يجب حمايته بميدل وير requireRole('admin') على مستوى الـ route)
 const createUser = async (req, res) => {
     try {
         const allowedRoles = ["customer", "seller", "admin"];
@@ -42,7 +33,7 @@ const createUser = async (req, res) => {
             email: req.body.email,
             password: bcrypt.hashSync(req.body.password, 10),
             role: finalRole
-        })
+        });
         const savedUser = await newUser.save();
         return res.status(201).json(savedUser);
     } catch (error) {
@@ -51,10 +42,8 @@ const createUser = async (req, res) => {
             details: error.message
         });
     }
-
 };
 
-// Update User By ID
 const updateUserById = async (req, res) => {
     try {
         const updatedUser = await userModel.findByIdAndUpdate(
@@ -67,7 +56,7 @@ const updateUserById = async (req, res) => {
             },
             { new: true }
         );
-        return res.status(200).json(updatedUser.select("-password"));
+        return res.status(200).json(updatedUser);
     } catch (error) {
         return res.status(500).json({
             message: "Failed to update user",
@@ -76,7 +65,6 @@ const updateUserById = async (req, res) => {
     }
 };
 
-// Delete User By ID
 const deleteUserById = async (req, res) => {
     try {
         const deletedUser = await userModel.findByIdAndDelete(req.params.id);
@@ -88,11 +76,10 @@ const deleteUserById = async (req, res) => {
         return res.status(500).json({
             message: "Failed to delete user",
             details: error.message
-        })
+        });
     }
 };
 
-// Login User
 const loginUser = async (req, res) => {
     try {
         const user = await userModel.findOne({ email: req.body.email });
@@ -123,6 +110,7 @@ const loginUser = async (req, res) => {
             email: user.email,
             name: user.name,
             role: user.role,
+            image: user.image || '',
             token: token,
         });
 
@@ -130,11 +118,10 @@ const loginUser = async (req, res) => {
         return res.status(500).json({
             message: "Failed to login user",
             details: error.message
-        })
+        });
     }
 };
 
-// Register User
 const registerUser = async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
@@ -149,8 +136,6 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ message: "Email already exists, Please login" });
         }
 
-        // فلترة الدور - بس customer أو seller مسموحين من التسجيل العام
-        // منع أي حد من تسجيل حساب admin بنفسه
         const allowedRoles = ["customer", "seller"];
         const finalRole = allowedRoles.includes(role) ? role : "customer";
 
@@ -166,9 +151,52 @@ const registerUser = async (req, res) => {
         return res.status(500).json({
             message: "Failed to register user",
             details: error.message
-        })
+        });
     }
-}
+};
+
+// ── جديد: تحديث الملف الشخصي للمستخدم الحالي (اسم/إيميل/صورة) ──
+const updateMyProfile = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        const updateData = {
+            name: req.body.name,
+            email: req.body.email,
+        };
+
+        if (req.body.password && req.body.password.trim() !== '') {
+            updateData.password = bcrypt.hashSync(req.body.password, 10);
+        }
+
+        if (req.file) {
+            updateData.image = req.file.filename;
+        }
+
+        const updatedUser = await userModel.findByIdAndUpdate(
+            userId,
+            updateData,
+            { new: true }
+        ).select("-password");
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User Not Found" });
+        }
+
+        return res.status(200).json({
+            id: updatedUser._id,
+            email: updatedUser.email,
+            name: updatedUser.name,
+            role: updatedUser.role,
+            image: updatedUser.image || '',
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "Failed to update profile",
+            details: error.message
+        });
+    }
+};
 
 module.exports = {
     getAllUsers,
@@ -177,5 +205,6 @@ module.exports = {
     updateUserById,
     deleteUserById,
     loginUser,
-    registerUser
+    registerUser,
+    updateMyProfile
 };

@@ -1,32 +1,29 @@
 const express = require('express');
 const router = express.Router();
-
-
 const userModel = require('../models/user.model');
 const userController = require('../controllers/user_controller');
-
 const authJwt = require('../helper/jwt');
+const uploads = require('../helper/uploads');
 
-// User Login and Registration
+// تسجيل الدخول وإنشاء حساب جديد
 router.post('/login', userController.loginUser);
-
 router.post('/register', userController.registerUser);
 
-// Get All Users
-router.get('/',authJwt,userController.getAllUsers);
+// جلب جميع المستخدمين
+router.get('/', authJwt, userController.getAllUsers);
 
-// Get User By ID
-router.get('/:id',authJwt,userController.getUserById);
+// جلب مستخدم معين عن طريق الـ ID
+router.get('/:id', authJwt, userController.getUserById);
 
-// Create New User
-router.post('/',userController.createUser);
+// إنشاء مستخدم جديد (من قبل المسؤول)
+router.post('/', userController.createUser);
 
-// Update User By ID
-router.put('/:id',authJwt,userController.updateUserById);
+router.put('/update-profile', authJwt, uploads.single('image'), userController.updateMyProfile);
 
-//Delete User By ID
-router.delete('/:id',authJwt,userController.deleteUserById);
+// تحديث مستخدم معين عن طريق الـ ID (للأدمن)
+router.put('/:id', authJwt, userController.updateUserById);
 
-
+// حذف مستخدم عن طريق الـ ID
+router.delete('/:id', authJwt, userController.deleteUserById);
 
 module.exports = router;
