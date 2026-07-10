@@ -35,6 +35,10 @@ const productSchema = new mongoose.Schema({
             return this.type === 'sell';
         }
     },
+    contactNumber: {
+        type: String,
+        required: true
+    },
     // donation
     targetAmount: {
         type: Number

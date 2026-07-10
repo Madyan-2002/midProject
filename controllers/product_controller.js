@@ -89,6 +89,7 @@ const createProduct = async (req, res) => {
             location: req.body.location || undefined,
             image: req.file ? [req.file.filename] : [],
             createdBy: req.user.userId,
+            contactNumber: req.body.contactNumber,
         });
 
         const savedProduct = await newProduct.save();
