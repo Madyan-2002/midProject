@@ -13,6 +13,8 @@ const productRoute = require('./routes/product_route');
 const categoryRoute = require('./routes/category_route');
 const orderRoute = require('./routes/order_route');
 const favoriteRoute = require('./routes/favorite_route');
+const feedbackRoute = require('./routes/feedback_route');
+
 
 require('dotenv').config();
 const port = process.env.PORT || 3000;
@@ -28,6 +30,8 @@ app.use(`${api}/uploads`, express.static(path.join(__dirname, "uploads")));
 app.use(`${api}/categories`, categoryRoute);
 app.use(`${api}/order`, orderRoute);
 app.use(`${api}/favorites`, favoriteRoute);
+
+app.use(`${api}/feedbacks`, feedbackRoute);
 
 // Middleware التحقق من التوكن (يستثني تسجيل الدخول/التسجيل وعرض المنتجات العام)
 app.use(authJwt.unless({
